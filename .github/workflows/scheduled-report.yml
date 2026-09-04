@@ -1,0 +1,58 @@
+name: Daily Subscriber Report
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # This is 8:00 AM IST (UTC+5:30)
+
+jobs:
+  generate_report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run the report generation
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CHANNEL_URL: https://www.youtube.com/@KauveryHospital
+          TIMEZONE: Asia/Kolkata
+        run: |
+          python -m src.main
+
+      - name: Upload report artifact
+        id: upload-report
+        uses: actions/upload-artifact@v4
+        with:
+          name: kauvery-youtube-report-${{ github.run_id }}
+          path: reports/Kauvery_YouTube_Subscriber_Report_*.pdf
+          retention-days: 90
+
+      - name: Create Todoist task
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+        run: |
+          REPORT=$(find reports -name 'Kauvery_YouTube_Subscriber_Report_*.pdf' | head -n 1)
+          REPORT_DATE=$(basename "$REPORT" .pdf | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          ARTIFACT_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          python -m src.integrations.todoist "$REPORT" "$REPORT_DATE" --report-url "$ARTIFACT_URL"
+
+      - name: Commit updated history
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: data/subscriber_history.csv
+          message: "Update subscriber history"
+          default_author: github_actions

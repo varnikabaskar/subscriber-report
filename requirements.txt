@@ -1,0 +1,8 @@
+pandas
+matplotlib
+reportlab
+requests
+python-dotenv
+numpy
+google-api-python-client
+PyMuPDF

@@ -1,0 +1,19 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local rendered previews and chart artifacts
+reports/sample_page_*.png
+reports/debug_*.pdf
+charts/*.png
+
+# Virtual environments
+.venv/
+.venv-*/
+venv/
