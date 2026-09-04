@@ -21,7 +21,7 @@ def create_report_task(report_path: str | Path, report_date: date, report_url: s
     if report_url:
         description += f"\n\nReport download: {report_url}"
     response = requests.post(
-        "https://api.todoist.com/rest/v2/tasks",
+        "https://api.todoist.com/api/v1/tasks",
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         json={
             "content": f"YouTube Daily Subscriber Report - {report_date.strftime('%d %b %Y')}",
@@ -29,7 +29,11 @@ def create_report_task(report_path: str | Path, report_date: date, report_url: s
         },
         timeout=30,
     )
-    response.raise_for_status()
+    if not response.ok:
+        raise RuntimeError(
+            f"Todoist task creation failed with HTTP {response.status_code}: "
+            f"{response.text[:500]}"
+        )
     return response.json()["id"]
 
 
